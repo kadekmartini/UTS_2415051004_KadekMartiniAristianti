@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'models/drama_item.dart';
+import 'models/drama_api_model.dart';
 import 'providers/drama_provider.dart';
+import 'providers/drama_api_provider.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider<DramaProvider>(
-      create: (context) => DramaProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<DramaProvider>(
+          create: (context) => DramaProvider(),
+        ),
+        ChangeNotifierProvider<DramaApiProvider>(
+          create: (context) => DramaApiProvider(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
@@ -18,7 +27,7 @@ const Color accentColor = Color(0xFFE99B84);
 const Color backgroundColor = Color(0xFFFAF7F4);
 const Color textColor = Color(0xFF302A35);
 
-// DATA CONTOH DRAMA
+// DATA CONTOH DRAMA LOKAL
 const List<DramaItem> demoDramas = [
   DramaItem(
     title: 'Bad Buddy',
@@ -64,6 +73,7 @@ const List<DramaItem> demoDramas = [
   ),
 ];
 
+// APLIKASI UTAMA
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -105,6 +115,7 @@ class _MainNavigationScreenState
   final List<Widget> pages = const [
     HomeScreen(),
     CatalogScreen(),
+    ApiDramaScreen(),
     WatchlistScreen(),
     ProfileScreen(),
   ];
@@ -133,6 +144,11 @@ class _MainNavigationScreenState
             icon: Icon(Icons.movie_outlined),
             selectedIcon: Icon(Icons.movie),
             label: 'Katalog',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.cloud_download_outlined),
+            selectedIcon: Icon(Icons.cloud_download),
+            label: 'API Drama',
           ),
           NavigationDestination(
             icon: Icon(Icons.bookmark_outline),
@@ -254,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
 
-          // PENCARIAN DRAMA
+          // PENCARIAN DRAMA LOKAL
           TextField(
             controller: searchController,
             onChanged: (value) {
@@ -522,7 +538,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// KARTU DRAMA REUSABLE
+// KARTU DRAMA LOKAL
 class DramaCard extends StatelessWidget {
   final DramaItem drama;
   final VoidCallback onTap;
@@ -640,7 +656,7 @@ class DramaCard extends StatelessWidget {
   }
 }
 
-// HALAMAN DETAIL DRAMA
+// HALAMAN DETAIL DRAMA LOKAL
 class DramaDetailScreen extends StatelessWidget {
   final DramaItem drama;
 
@@ -738,7 +754,7 @@ class DramaDetailScreen extends StatelessWidget {
   }
 }
 
-// HALAMAN KATALOG
+// HALAMAN KATALOG LOKAL
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
 
@@ -844,6 +860,374 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// HALAMAN PENCARIAN REST API
+class ApiDramaScreen extends StatefulWidget {
+  const ApiDramaScreen({super.key});
+
+  @override
+  State<ApiDramaScreen> createState() => _ApiDramaScreenState();
+}
+
+class _ApiDramaScreenState extends State<ApiDramaScreen> {
+  final TextEditingController searchController =
+      TextEditingController();
+
+  bool hasSearched = false;
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> searchDramas() async {
+    final query = searchController.text.trim();
+
+    if (query.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Masukkan nama serial terlebih dahulu.'),
+        ),
+      );
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      hasSearched = true;
+    });
+
+    await context
+        .read<DramaApiProvider>()
+        .searchDramas(query);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final apiProvider = context.watch<DramaApiProvider>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Cari Drama dari API',
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              children: [
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Jelajahi serial dari internet',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Data diambil melalui REST API TVmaze.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: searchController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => searchDramas(),
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Bad Buddy',
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: primaryColor,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: apiProvider.isLoading
+                        ? null
+                        : searchDramas,
+                    icon: const Icon(Icons.cloud_download_outlined),
+                    label: const Text('Cari melalui API'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // STATUS LOADING
+          if (apiProvider.isLoading)
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      color: primaryColor,
+                    ),
+                    SizedBox(height: 16),
+                    Text('Sedang mengambil data drama...'),
+                  ],
+                ),
+              ),
+            )
+
+          // STATUS ERROR
+          else if (apiProvider.errorMessage != null)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.cloud_off_outlined,
+                        size: 58,
+                        color: Colors.redAccent,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        apiProvider.errorMessage!,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: searchDramas,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Coba Lagi'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+
+          // HASIL PENCARIAN ATAU STATUS KOSONG
+          else if (apiProvider.dramas.isEmpty)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        hasSearched
+                            ? Icons.search_off
+                            : Icons.live_tv_outlined,
+                        color: primaryColor,
+                        size: 62,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        hasSearched
+                            ? 'Drama tidak ditemukan.'
+                            : 'Cari serial favoritmu',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        hasSearched
+                            ? 'Coba kata kunci lain.'
+                            : 'Masukkan judul serial, lalu tekan tombol Cari.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+
+          // HASIL REST API
+          else
+            Expanded(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${apiProvider.dramas.length} hasil ditemukan',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: apiProvider.dramas.length,
+                      itemBuilder: (context, index) {
+                        final drama = apiProvider.dramas[index];
+
+                        return ApiDramaCard(drama: drama);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// KARTU HASIL REST API
+class ApiDramaCard extends StatelessWidget {
+  final DramaApiModel drama;
+
+  const ApiDramaCard({
+    super.key,
+    required this.drama,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      margin: const EdgeInsets.symmetric(
+        horizontal: 4,
+        vertical: 7,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: drama.imageUrl != null &&
+                      drama.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      drama.imageUrl!,
+                      width: 78,
+                      height: 112,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 78,
+                          height: 112,
+                          color: const Color(0xFFECE3F0),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.movie_outlined,
+                            color: primaryColor,
+                            size: 34,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      width: 78,
+                      height: 112,
+                      color: const Color(0xFFECE3F0),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.movie_outlined,
+                        color: primaryColor,
+                        size: 34,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    drama.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${drama.year} • ${drama.language}',
+                    style: const TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    drama.genres.isEmpty
+                        ? 'Genre belum tersedia'
+                        : drama.genres.join(' • '),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Status: ${drama.status}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  if (drama.summary.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      drama.summary,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
