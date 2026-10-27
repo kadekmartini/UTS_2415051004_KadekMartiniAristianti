@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'models/drama_item.dart';
+import 'providers/drama_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider<DramaProvider>(
+      create: (context) => DramaProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 const Color primaryColor = Color(0xFF59436B);
@@ -299,7 +307,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -483,7 +492,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Punya drama favorit?',
@@ -641,6 +651,10 @@ class DramaDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSaved = context.select<DramaProvider, bool>(
+      (provider) => provider.isInWatchlist(drama),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Drama'),
@@ -693,16 +707,30 @@ class DramaDetailScreen extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
+              context
+                  .read<DramaProvider>()
+                  .toggleWatchlist(drama);
+
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text(
-                    'Fitur penyimpanan watchlist akan dibuat berikutnya.',
+                    isSaved
+                        ? '${drama.title} dihapus dari Watchlist.'
+                        : '${drama.title} ditambahkan ke Watchlist.',
                   ),
                 ),
               );
             },
-            icon: const Icon(Icons.bookmark_add_outlined),
-            label: const Text('Tambahkan ke Watchlist'),
+            icon: Icon(
+              isSaved
+                  ? Icons.bookmark_remove_outlined
+                  : Icons.bookmark_add_outlined,
+            ),
+            label: Text(
+              isSaved
+                  ? 'Hapus dari Watchlist'
+                  : 'Tambahkan ke Watchlist',
+            ),
           ),
         ],
       ),
@@ -821,12 +849,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 }
 
-// HALAMAN WATCHLIST SEMENTARA
+// HALAMAN WATCHLIST
 class WatchlistScreen extends StatelessWidget {
   const WatchlistScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final watchlist = context.watch<DramaProvider>().watchlist;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -837,34 +867,75 @@ class WatchlistScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.bookmark_border,
-                color: primaryColor,
-                size: 65,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Watchlist Kamu',
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
+      body: watchlist.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.bookmark_border,
+                      color: primaryColor,
+                      size: 65,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Watchlist Kamu',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Drama yang kamu simpan akan muncul di sini.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Drama yang kamu simpan akan muncul di sini.',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 900
+                    ? 4
+                    : constraints.maxWidth >= 600
+                        ? 3
+                        : 2;
+
+                return GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: watchlist.length,
+                  gridDelegate:
+                      SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisExtent: 235,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final drama = watchlist[index];
+
+                    return DramaCard(
+                      drama: drama,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return DramaDetailScreen(
+                                drama: drama,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 }
