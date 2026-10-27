@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'models/drama_item.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,48 +10,7 @@ const Color accentColor = Color(0xFFE99B84);
 const Color backgroundColor = Color(0xFFFAF7F4);
 const Color textColor = Color(0xFF302A35);
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DramaVerse',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: backgroundColor,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor,
-          elevation: 0,
-        ),
-      ),
-      home: const MainNavigationScreen(),
-    );
-  }
-}
-
 // DATA CONTOH DRAMA
-class DramaItem {
-  final String title;
-  final String year;
-  final String genre;
-  final String description;
-  final Color color;
-
-  const DramaItem({
-    required this.title,
-    required this.year,
-    required this.genre,
-    required this.description,
-    required this.color,
-  });
-}
-
 const List<DramaItem> demoDramas = [
   DramaItem(
     title: 'Bad Buddy',
@@ -95,6 +55,31 @@ const List<DramaItem> demoDramas = [
     color: Color(0xFF83A99B),
   ),
 ];
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'DramaVerse',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          elevation: 0,
+        ),
+      ),
+      home: const MainNavigationScreen(),
+    );
+  }
+}
 
 // NAVIGASI UTAMA
 class MainNavigationScreen extends StatefulWidget {
@@ -187,15 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   void openDrama(DramaItem drama) {
     Navigator.push(
       context,
@@ -270,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Pencarian
+          // PENCARIAN DRAMA
           TextField(
             controller: searchController,
             onChanged: (value) {
@@ -295,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 24),
 
-          // Banner drama pilihan
+          // BANNER DRAMA PILIHAN
           Container(
             height: 215,
             decoration: BoxDecoration(
@@ -394,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Filter genre
+          // FILTER GENRE
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -414,7 +390,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     selectedColor: primaryColor,
                     backgroundColor: Colors.white,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : textColor,
+                      color: isSelected
+                          ? Colors.white
+                          : textColor,
                       fontSize: 12,
                     ),
                     showCheckmark: false,
@@ -442,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Grid responsif
+          // GRID DRAMA RESPONSIF
           if (filteredDramas.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -486,6 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+
           const SizedBox(height: 26),
 
           Container(
@@ -533,7 +512,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// KARTU DRAMA YANG DIGUNAKAN ULANG
+// KARTU DRAMA REUSABLE
 class DramaCard extends StatelessWidget {
   final DramaItem drama;
   final VoidCallback onTap;
