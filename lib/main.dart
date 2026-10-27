@@ -29,11 +29,135 @@ class MyApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const HomeScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }
 
+// DATA CONTOH DRAMA
+class DramaItem {
+  final String title;
+  final String year;
+  final String genre;
+  final String description;
+  final Color color;
+
+  const DramaItem({
+    required this.title,
+    required this.year,
+    required this.genre,
+    required this.description,
+    required this.color,
+  });
+}
+
+const List<DramaItem> demoDramas = [
+  DramaItem(
+    title: 'Bad Buddy',
+    year: '2021',
+    genre: 'BL',
+    description: 'Romance dan persahabatan',
+    color: Color(0xFFB77A91),
+  ),
+  DramaItem(
+    title: '2gether',
+    year: '2020',
+    genre: 'BL',
+    description: 'Musik dan romansa',
+    color: Color(0xFF7B9FB4),
+  ),
+  DramaItem(
+    title: 'GAP The Series',
+    year: '2022',
+    genre: 'GL',
+    description: 'Romansa dan perasaan',
+    color: Color(0xFFB895A6),
+  ),
+  DramaItem(
+    title: 'F4 Thailand',
+    year: '2021',
+    genre: 'Romance',
+    description: 'Cinta dan kehidupan sekolah',
+    color: Color(0xFFCC9B72),
+  ),
+  DramaItem(
+    title: 'Girl From Nowhere',
+    year: '2018',
+    genre: 'Thriller',
+    description: 'Misteri dan ketegangan',
+    color: Color(0xFF8177A8),
+  ),
+  DramaItem(
+    title: 'My School President',
+    year: '2022',
+    genre: 'Comedy',
+    description: 'Sekolah, musik, dan cinta',
+    color: Color(0xFF83A99B),
+  ),
+];
+
+// NAVIGASI UTAMA
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState
+    extends State<MainNavigationScreen> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeScreen(),
+    CatalogScreen(),
+    WatchlistScreen(),
+    ProfileScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: selectedIndex,
+        children: pages,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.movie_outlined),
+            selectedIcon: Icon(Icons.movie),
+            label: 'Katalog',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bookmark_outline),
+            selectedIcon: Icon(Icons.bookmark),
+            label: 'Watchlist',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// HALAMAN BERANDA
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -57,51 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'Thriller',
   ];
 
-  final List<DramaItem> dramas = const [
-    DramaItem(
-      title: 'Bad Buddy',
-      year: '2021',
-      genre: 'BL',
-      description: 'Romance dan persahabatan',
-      color: Color(0xFFB77A91),
-    ),
-    DramaItem(
-      title: '2gether',
-      year: '2020',
-      genre: 'BL',
-      description: 'Musik dan romansa',
-      color: Color(0xFF7B9FB4),
-    ),
-    DramaItem(
-      title: 'GAP The Series',
-      year: '2022',
-      genre: 'GL',
-      description: 'Romansa dan perasaan',
-      color: Color(0xFFB895A6),
-    ),
-    DramaItem(
-      title: 'F4 Thailand',
-      year: '2021',
-      genre: 'Romance',
-      description: 'Cinta dan kehidupan sekolah',
-      color: Color(0xFFCC9B72),
-    ),
-    DramaItem(
-      title: 'Girl From Nowhere',
-      year: '2018',
-      genre: 'Thriller',
-      description: 'Misteri dan ketegangan',
-      color: Color(0xFF8177A8),
-    ),
-    DramaItem(
-      title: 'My School President',
-      year: '2022',
-      genre: 'Comedy',
-      description: 'Sekolah, musik, dan cinta',
-      color: Color(0xFF83A99B),
-    ),
-  ];
-
   @override
   void dispose() {
     searchController.dispose();
@@ -117,9 +196,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void openDrama(DramaItem drama) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return DramaDetailScreen(drama: drama);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredDramas = dramas.where((drama) {
+    final filteredDramas = demoDramas.where((drama) {
       final matchesGenre = selectedGenre == 'Semua' ||
           drama.genre == selectedGenre;
 
@@ -158,25 +248,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFFECE3F0),
-              child: IconButton(
-                onPressed: () {
-                  showMessage(
-                    'Halaman profil akan dibuat pada tahap berikutnya.',
-                  );
-                },
-                icon: const Icon(
-                  Icons.person_outline_rounded,
-                  color: primaryColor,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
@@ -199,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Kolom pencarian
+          // Pencarian
           TextField(
             controller: searchController,
             onChanged: (value) {
@@ -209,25 +280,19 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             decoration: InputDecoration(
               hintText: 'Cari drama favoritmu...',
-              hintStyle: const TextStyle(
-                color: Colors.black38,
-                fontSize: 14,
-              ),
               prefixIcon: const Icon(
                 Icons.search_rounded,
                 color: primaryColor,
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 15,
-              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
             ),
           ),
+
           const SizedBox(height: 24),
 
           // Banner drama pilihan
@@ -246,18 +311,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Stack(
               children: [
-                Positioned(
-                  right: -20,
-                  top: -25,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
                 Positioned(
                   right: 22,
                   top: 42,
@@ -312,22 +365,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 36,
                         child: ElevatedButton(
                           onPressed: () {
-                            showMessage(
-                              'Detail Bad Buddy akan dibuat pada tahap berikutnya.',
-                            );
+                            openDrama(demoDramas[0]);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: primaryColor,
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Lihat Drama',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
+                          child: const Text('Lihat Drama'),
                         ),
                       ),
                     ],
@@ -336,9 +381,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
           const SizedBox(height: 28),
 
-          // Pilihan genre
           const Text(
             'Jelajahi Genre',
             style: TextStyle(
@@ -348,6 +393,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 12),
+
+          // Filter genre
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -369,15 +416,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : textColor,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? primaryColor
-                          : const Color(0xFFE9E2E8),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
                     ),
                     showCheckmark: false,
                   ),
@@ -385,9 +423,9 @@ class _HomeScreenState extends State<HomeScreen> {
               }).toList(),
             ),
           ),
+
           const SizedBox(height: 26),
 
-          // Judul daftar drama
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -399,33 +437,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: textColor,
                 ),
               ),
-              Text(
-                '${filteredDramas.length} drama',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                ),
-              ),
+              Text('${filteredDramas.length} drama'),
             ],
           ),
           const SizedBox(height: 14),
 
-          // Grid yang menyesuaikan lebar layar
+          // Grid responsif
           if (filteredDramas.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
               child: Center(
-                child: Text('Drama yang kamu cari belum ditemukan.'),
+                child: Text('Drama tidak ditemukan.'),
               ),
             )
           else
             LayoutBuilder(
               builder: (context, constraints) {
-                final double width = constraints.maxWidth;
-
-                // Layar kecil: 2 kolom.
-                // Layar sedang: 3 kolom.
-                // Layar lebar: 4 kolom.
+                final width = constraints.maxWidth;
                 final int columnCount;
 
                 if (width >= 900) {
@@ -452,12 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     return DramaCard(
                       drama: drama,
-                      onTap: () {
-                        showMessage(
-                          'Kamu memilih ${drama.title}. '
-                          'Detail akan dibuat pada tahap berikutnya.',
-                        );
-                      },
+                      onTap: () => openDrama(drama),
                     );
                   },
                 );
@@ -465,7 +488,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           const SizedBox(height: 26),
 
-          // Informasi watchlist
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -493,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Nanti kamu bisa menyimpannya di watchlist.',
+                        'Simpan drama favoritmu di watchlist.',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.black54,
@@ -511,22 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class DramaItem {
-  final String title;
-  final String year;
-  final String genre;
-  final String description;
-  final Color color;
-
-  const DramaItem({
-    required this.title,
-    required this.year,
-    required this.genre,
-    required this.description,
-    required this.color,
-  });
-}
-
+// KARTU DRAMA YANG DIGUNAKAN ULANG
 class DramaCard extends StatelessWidget {
   final DramaItem drama;
   final VoidCallback onTap;
@@ -543,7 +550,6 @@ class DramaCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       color: Colors.white,
       elevation: 1,
-      shadowColor: Colors.black12,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -557,9 +563,6 @@ class DramaCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -643,6 +646,332 @@ class DramaCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// HALAMAN DETAIL DRAMA
+class DramaDetailScreen extends StatelessWidget {
+  final DramaItem drama;
+
+  const DramaDetailScreen({
+    super.key,
+    required this.drama,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detail Drama'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            height: 230,
+            decoration: BoxDecoration(
+              color: drama.color,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Icon(
+              Icons.movie_outlined,
+              size: 90,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            drama.title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 26,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${drama.year} • Thailand • ${drama.genre}',
+            style: const TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Informasi Drama',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            drama.description,
+            style: const TextStyle(fontSize: 15),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Fitur penyimpanan watchlist akan dibuat berikutnya.',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.bookmark_add_outlined),
+            label: const Text('Tambahkan ke Watchlist'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// HALAMAN KATALOG
+class CatalogScreen extends StatefulWidget {
+  const CatalogScreen({super.key});
+
+  @override
+  State<CatalogScreen> createState() => _CatalogScreenState();
+}
+
+class _CatalogScreenState extends State<CatalogScreen> {
+  String searchText = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredDramas = demoDramas.where((drama) {
+      return drama.title
+          .toLowerCase()
+          .contains(searchText.toLowerCase());
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Katalog Drama',
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchText = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Cari drama...',
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: primaryColor,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: filteredDramas.isEmpty
+                ? const Center(
+                    child: Text('Drama tidak ditemukan.'),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final int columns;
+
+                      if (width >= 900) {
+                        columns = 4;
+                      } else if (width >= 600) {
+                        columns = 3;
+                      } else {
+                        columns = 2;
+                      }
+
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredDramas.length,
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisExtent: 235,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemBuilder: (context, index) {
+                          final drama = filteredDramas[index];
+
+                          return DramaCard(
+                            drama: drama,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return DramaDetailScreen(
+                                      drama: drama,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// HALAMAN WATCHLIST SEMENTARA
+class WatchlistScreen extends StatelessWidget {
+  const WatchlistScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Watchlist',
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.bookmark_border,
+                color: primaryColor,
+                size: 65,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Watchlist Kamu',
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Drama yang kamu simpan akan muncul di sini.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// HALAMAN PROFIL
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Profil',
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const CircleAvatar(
+            radius: 45,
+            backgroundColor: Color(0xFFECE3F0),
+            child: Icon(
+              Icons.person,
+              color: primaryColor,
+              size: 50,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'Kadek Martini Aristianti',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Center(
+            child: Text(
+              'Mahasiswa Pendidikan Teknik Informatika',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Card(
+            color: Colors.white,
+            child: ListTile(
+              leading: Icon(
+                Icons.badge_outlined,
+                color: primaryColor,
+              ),
+              title: Text('NIM'),
+              subtitle: Text('2415051004'),
+            ),
+          ),
+          const Card(
+            color: Colors.white,
+            child: ListTile(
+              leading: Icon(
+                Icons.school_outlined,
+                color: primaryColor,
+              ),
+              title: Text('Kelas'),
+              subtitle: Text('PTI 5C'),
+            ),
+          ),
+          const Card(
+            color: Colors.white,
+            child: ListTile(
+              leading: Icon(
+                Icons.movie_outlined,
+                color: primaryColor,
+              ),
+              title: Text('Nama Aplikasi'),
+              subtitle: Text('DramaVerse'),
+            ),
+          ),
+        ],
       ),
     );
   }
