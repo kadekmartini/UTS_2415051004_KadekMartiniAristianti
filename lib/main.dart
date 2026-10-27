@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/drama_item.dart';
 import 'models/drama_api_model.dart';
 import 'providers/drama_provider.dart';
 import 'providers/drama_api_provider.dart';
+import 'providers/drama_database_provider.dart';
+import 'screens/drama_database_screen.dart';
 
-void main() {
+// KONFIGURASI SUPABASE
+const String supabaseUrl =
+    'https://idpxiyyrjnusoiynbtpg.supabase.co';
+
+const String supabasePublishableKey =
+    'sb_publishable_Yo8NEsJKgv2yZHur5LNu1A_VxPU4CKX';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: supabaseUrl,
+    publishableKey: supabasePublishableKey,
+  );
+
   runApp(
     MultiProvider(
       providers: [
@@ -15,6 +32,9 @@ void main() {
         ),
         ChangeNotifierProvider<DramaApiProvider>(
           create: (context) => DramaApiProvider(),
+        ),
+        ChangeNotifierProvider<DramaDatabaseProvider>(
+          create: (context) => DramaDatabaseProvider(),
         ),
       ],
       child: const MyApp(),
@@ -116,6 +136,7 @@ class _MainNavigationScreenState
     HomeScreen(),
     CatalogScreen(),
     ApiDramaScreen(),
+    DramaDatabaseScreen(),
     WatchlistScreen(),
     ProfileScreen(),
   ];
@@ -149,6 +170,11 @@ class _MainNavigationScreenState
             icon: Icon(Icons.cloud_download_outlined),
             selectedIcon: Icon(Icons.cloud_download),
             label: 'API Drama',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.storage_outlined),
+            selectedIcon: Icon(Icons.storage),
+            label: 'Database',
           ),
           NavigationDestination(
             icon: Icon(Icons.bookmark_outline),
@@ -723,9 +749,7 @@ class DramaDetailScreen extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
-              context
-                  .read<DramaProvider>()
-                  .toggleWatchlist(drama);
+              context.read<DramaProvider>().toggleWatchlist(drama);
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -903,9 +927,7 @@ class _ApiDramaScreenState extends State<ApiDramaScreen> {
       hasSearched = true;
     });
 
-    await context
-        .read<DramaApiProvider>()
-        .searchDramas(query);
+    await context.read<DramaApiProvider>().searchDramas(query);
   }
 
   @override
@@ -985,7 +1007,6 @@ class _ApiDramaScreenState extends State<ApiDramaScreen> {
           ),
           const Divider(height: 1),
 
-          // STATUS LOADING
           if (apiProvider.isLoading)
             const Expanded(
               child: Center(
@@ -1001,8 +1022,6 @@ class _ApiDramaScreenState extends State<ApiDramaScreen> {
                 ),
               ),
             )
-
-          // STATUS ERROR
           else if (apiProvider.errorMessage != null)
             Expanded(
               child: Center(
@@ -1032,8 +1051,6 @@ class _ApiDramaScreenState extends State<ApiDramaScreen> {
                 ),
               ),
             )
-
-          // HASIL PENCARIAN ATAU STATUS KOSONG
           else if (apiProvider.dramas.isEmpty)
             Expanded(
               child: Center(
@@ -1073,8 +1090,6 @@ class _ApiDramaScreenState extends State<ApiDramaScreen> {
                 ),
               ),
             )
-
-          // HASIL REST API
           else
             Expanded(
               child: Column(
@@ -1098,7 +1113,6 @@ class _ApiDramaScreenState extends State<ApiDramaScreen> {
                       itemCount: apiProvider.dramas.length,
                       itemBuilder: (context, index) {
                         final drama = apiProvider.dramas[index];
-
                         return ApiDramaCard(drama: drama);
                       },
                     ),
