@@ -4,118 +4,631 @@ void main() {
   runApp(const MyApp());
 }
 
+const Color primaryColor = Color(0xFF59436B);
+const Color accentColor = Color(0xFFE99B84);
+const Color backgroundColor = Color(0xFFFAF7F4);
+const Color textColor = Color(0xFF302A35);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'DramaVerse',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        scaffoldBackgroundColor: backgroundColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          elevation: 0,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomeScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomeScreenState extends State<HomeScreen> {
+  String selectedGenre = 'Semua';
+  String searchText = '';
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  final TextEditingController searchController =
+      TextEditingController();
+
+  final List<String> genres = [
+    'Semua',
+    'BL',
+    'GL',
+    'Romance',
+    'Comedy',
+    'Thriller',
+  ];
+
+  final List<DramaItem> dramas = const [
+    DramaItem(
+      title: 'Bad Buddy',
+      year: '2021',
+      genre: 'BL',
+      description: 'Romance dan persahabatan',
+      icon: Icons.movie_outlined,
+      color: Color(0xFFB77A91),
+    ),
+    DramaItem(
+      title: '2gether',
+      year: '2020',
+      genre: 'BL',
+      description: 'Musik dan romansa',
+      icon: Icons.movie_outlined,
+      color: Color(0xFF7B9FB4),
+    ),
+    DramaItem(
+      title: 'GAP The Series',
+      year: '2022',
+      genre: 'GL',
+      description: 'Romansa dan perasaan',
+      icon: Icons.movie_outlined,
+      color: Color(0xFFB895A6),
+    ),
+    DramaItem(
+      title: 'F4 Thailand',
+      year: '2021',
+      genre: 'Romance',
+      description: 'Cinta dan kehidupan sekolah',
+      icon: Icons.movie_outlined,
+      color: Color(0xFFCC9B72),
+    ),
+    DramaItem(
+      title: 'Girl From Nowhere',
+      year: '2018',
+      genre: 'Thriller',
+      description: 'Misteri dan ketegangan',
+      icon: Icons.movie_outlined,
+      color: Color(0xFF8177A8),
+    ),
+    DramaItem(
+      title: 'My School President',
+      year: '2022',
+      genre: 'Comedy',
+      description: 'Sekolah, musik, dan cinta',
+      icon: Icons.movie_outlined,
+      color: Color(0xFF83A99B),
+    ),
+  ];
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final filteredDramas = dramas.where((drama) {
+      final matchesGenre = selectedGenre == 'Semua' ||
+          drama.genre == selectedGenre;
+
+      final matchesSearch = drama.title
+          .toLowerCase()
+          .contains(searchText.toLowerCase());
+
+      return matchesGenre && matchesSearch;
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+        title: Row(
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.movie_outlined,
+                color: Colors.white,
+                size: 23,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'DramaVerse',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 21,
+                color: primaryColor,
+              ),
             ),
           ],
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFFECE3F0),
+              child: IconButton(
+                onPressed: () {
+                  showMessage('Halaman profil akan dibuat nanti.');
+                },
+                icon: const Icon(
+                  Icons.person_outline_rounded,
+                  color: primaryColor,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+        children: [
+          const Text(
+            'Halo, pecinta drama! 👋',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Mau nonton cerita apa hari ini?',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Kolom pencarian
+          TextField(
+            controller: searchController,
+            onChanged: (value) {
+              setState(() {
+                searchText = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Cari drama favoritmu...',
+              hintStyle: const TextStyle(
+                color: Colors.black38,
+                fontSize: 14,
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                color: primaryColor,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Banner drama pilihan
+          Container(
+            height: 215,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF765D86),
+                  Color(0xFF49364F),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -20,
+                  top: -25,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 22,
+                  top: 42,
+                  child: Icon(
+                    Icons.movie_outlined,
+                    color: Colors.white.withValues(alpha: 0.15),
+                    size: 100,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'DRAMA PILIHAN',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'BAD BUDDY',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      const Text(
+                        'Thailand • Romance • BL',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            showMessage(
+                              'Detail Bad Buddy akan dibuat pada tahap berikutnya.',
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: primaryColor,
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Lihat Drama',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Pilihan genre
+          const Text(
+            'Jelajahi Genre',
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: genres.map((genre) {
+                final isSelected = selectedGenre == genre;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(genre),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        selectedGenre = genre;
+                      });
+                    },
+                    selectedColor: primaryColor,
+                    backgroundColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : textColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    side: BorderSide(
+                      color: isSelected
+                          ? primaryColor
+                          : const Color(0xFFE9E2E8),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    showCheckmark: false,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 26),
+
+          // Judul daftar drama
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Drama Thailand',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              Text(
+                '${filteredDramas.length} drama',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Kartu drama
+          if (filteredDramas.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: Text('Drama yang kamu cari belum ditemukan.'),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: filteredDramas.length,
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 220,
+                mainAxisExtent: 235,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemBuilder: (context, index) {
+                final drama = filteredDramas[index];
+
+                return DramaCard(
+                  drama: drama,
+                  onTap: () {
+                    showMessage(
+                      'Kamu memilih ${drama.title}. Detail akan dibuat nanti.',
+                    );
+                  },
+                );
+              },
+            ),
+          const SizedBox(height: 26),
+
+          // Informasi watchlist
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0E9F2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.movie_outlined,
+                  color: primaryColor,
+                  size: 27,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Punya drama favorit?',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Nanti kamu bisa menyimpannya di watchlist.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DramaItem {
+  final String title;
+  final String year;
+  final String genre;
+  final String description;
+  final IconData icon;
+  final Color color;
+
+  const DramaItem({
+    required this.title,
+    required this.year,
+    required this.genre,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
+}
+
+class DramaCard extends StatelessWidget {
+  final DramaItem drama;
+  final VoidCallback onTap;
+
+  const DramaCard({
+    super.key,
+    required this.drama,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      color: Colors.white,
+      elevation: 1,
+      shadowColor: Colors.black12,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      drama.color,
+                      drama.color.withValues(alpha: 0.65),
+                    ],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        Icons.movie_outlined,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 54,
+                      ),
+                    ),
+                    Positioned(
+                      left: 9,
+                      top: 9,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          drama.year,
+                          style: const TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    drama.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    drama.genre,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    drama.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
