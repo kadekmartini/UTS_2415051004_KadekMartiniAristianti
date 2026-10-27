@@ -63,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
       year: '2021',
       genre: 'BL',
       description: 'Romance dan persahabatan',
-      icon: Icons.movie_outlined,
       color: Color(0xFFB77A91),
     ),
     DramaItem(
@@ -71,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
       year: '2020',
       genre: 'BL',
       description: 'Musik dan romansa',
-      icon: Icons.movie_outlined,
       color: Color(0xFF7B9FB4),
     ),
     DramaItem(
@@ -79,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen> {
       year: '2022',
       genre: 'GL',
       description: 'Romansa dan perasaan',
-      icon: Icons.movie_outlined,
       color: Color(0xFFB895A6),
     ),
     DramaItem(
@@ -87,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
       year: '2021',
       genre: 'Romance',
       description: 'Cinta dan kehidupan sekolah',
-      icon: Icons.movie_outlined,
       color: Color(0xFFCC9B72),
     ),
     DramaItem(
@@ -95,7 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
       year: '2018',
       genre: 'Thriller',
       description: 'Misteri dan ketegangan',
-      icon: Icons.movie_outlined,
       color: Color(0xFF8177A8),
     ),
     DramaItem(
@@ -103,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
       year: '2022',
       genre: 'Comedy',
       description: 'Sekolah, musik, dan cinta',
-      icon: Icons.movie_outlined,
       color: Color(0xFF83A99B),
     ),
   ];
@@ -171,7 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: const Color(0xFFECE3F0),
               child: IconButton(
                 onPressed: () {
-                  showMessage('Halaman profil akan dibuat nanti.');
+                  showMessage(
+                    'Halaman profil akan dibuat pada tahap berikutnya.',
+                  );
                 },
                 icon: const Icon(
                   Icons.person_outline_rounded,
@@ -414,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Kartu drama
+          // Grid yang menyesuaikan lebar layar
           if (filteredDramas.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -423,25 +419,45 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: filteredDramas.length,
-              gridDelegate:
-                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 220,
-                mainAxisExtent: 235,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemBuilder: (context, index) {
-                final drama = filteredDramas[index];
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double width = constraints.maxWidth;
 
-                return DramaCard(
-                  drama: drama,
-                  onTap: () {
-                    showMessage(
-                      'Kamu memilih ${drama.title}. Detail akan dibuat nanti.',
+                // Layar kecil: 2 kolom.
+                // Layar sedang: 3 kolom.
+                // Layar lebar: 4 kolom.
+                final int columnCount;
+
+                if (width >= 900) {
+                  columnCount = 4;
+                } else if (width >= 600) {
+                  columnCount = 3;
+                } else {
+                  columnCount = 2;
+                }
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filteredDramas.length,
+                  gridDelegate:
+                      SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columnCount,
+                    mainAxisExtent: 235,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final drama = filteredDramas[index];
+
+                    return DramaCard(
+                      drama: drama,
+                      onTap: () {
+                        showMessage(
+                          'Kamu memilih ${drama.title}. '
+                          'Detail akan dibuat pada tahap berikutnya.',
+                        );
+                      },
                     );
                   },
                 );
@@ -500,7 +516,6 @@ class DramaItem {
   final String year;
   final String genre;
   final String description;
-  final IconData icon;
   final Color color;
 
   const DramaItem({
@@ -508,7 +523,6 @@ class DramaItem {
     required this.year,
     required this.genre,
     required this.description,
-    required this.icon,
     required this.color,
   });
 }
