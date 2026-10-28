@@ -43,4 +43,29 @@ class DramaSupabaseService {
 
     return DramaDatabaseModel.fromJson(row);
   }
+
+  // MEMPERBARUI DATA DRAMA
+  Future<DramaDatabaseModel> updateDrama({
+    required int id,
+    required String title,
+    required int? year,
+    required String genre,
+    String? description,
+    String? posterUrl,
+  }) async {
+    final row = await _client
+        .from('dramas')
+        .update({
+          'title': title,
+          'year': year,
+          'genre': genre,
+          'description': description,
+          'poster_url': posterUrl,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+    return DramaDatabaseModel.fromJson(row);
+  }
 }

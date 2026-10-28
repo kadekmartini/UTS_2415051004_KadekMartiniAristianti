@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/drama_database_model.dart';
 import '../providers/drama_database_provider.dart';
+import 'drama_edit_screen.dart';
 import 'drama_form_screen.dart';
 
 class DramaDatabaseScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _DramaDatabaseScreenState
     });
   }
 
+  // MEMBUKA FORM TAMBAH DRAMA
   Future<void> _openCreateForm() async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -165,7 +167,7 @@ class _DramaDatabaseScreenState
       color: const Color(0xFF59436B),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
         itemCount: provider.dramas.length,
         itemBuilder: (context, index) {
           final drama = provider.dramas[index];
@@ -185,6 +187,23 @@ class DramaDatabaseCard extends StatelessWidget {
     super.key,
     required this.drama,
   });
+
+  // MEMBUKA FORM EDIT DRAMA
+  Future<void> _openEditForm(BuildContext context) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (context) => DramaEditScreen(
+          drama: drama,
+        ),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (result == true) {
+      await context.read<DramaDatabaseProvider>().loadDramas();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +249,22 @@ class DramaDatabaseCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openEditForm(context),
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                      ),
+                      label: const Text('Edit Drama'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF59436B),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -239,7 +274,7 @@ class DramaDatabaseCard extends StatelessWidget {
     );
   }
 
-  // POSTER DRAMA
+  // MEMUAT POSTER
   Widget _buildPoster(String? url) {
     if (url == null || url.trim().isEmpty) {
       return _posterPlaceholder();
@@ -252,11 +287,7 @@ class DramaDatabaseCard extends StatelessWidget {
         width: 76,
         height: 106,
         fit: BoxFit.cover,
-
-        // Membantu memuat gambar eksternal di Flutter Web.
         webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
-
-        // Tampilkan placeholder jika gambar gagal dimuat.
         errorBuilder: (context, error, stackTrace) {
           return _posterPlaceholder();
         },
@@ -264,7 +295,7 @@ class DramaDatabaseCard extends StatelessWidget {
     );
   }
 
-  // TAMPILAN PENGGANTI JIKA POSTER KOSONG ATAU GAGAL
+  // POSTER PENGGANTI JIKA GAMBAR TIDAK TERSEDIA
   Widget _posterPlaceholder() {
     return Container(
       width: 76,

@@ -64,4 +64,31 @@ class DramaDatabaseProvider extends ChangeNotifier {
 
     return newDrama;
   }
+
+  // MEMPERBARUI DATA DRAMA
+  Future<DramaDatabaseModel> updateDrama({
+    required int id,
+    required String title,
+    required int? year,
+    required String genre,
+    String? description,
+    String? posterUrl,
+  }) async {
+    final updatedDrama = await _service.updateDrama(
+      id: id,
+      title: title,
+      year: year,
+      genre: genre,
+      description: description,
+      posterUrl: posterUrl,
+    );
+
+    _dramas = _dramas.map((drama) {
+      return drama.id == updatedDrama.id ? updatedDrama : drama;
+    }).toList();
+
+    notifyListeners();
+
+    return updatedDrama;
+  }
 }
