@@ -28,10 +28,13 @@ class DramaDatabaseProvider extends ChangeNotifier {
 
     try {
       _dramas = await _service.getDramas();
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('Gagal memuat data drama: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
       _errorMessage =
-          'Gagal mengambil data drama dari database. '
-          'Periksa koneksi dan izin akses Supabase.';
+          'Data drama gagal dimuat. Periksa koneksi internet '
+          'dan izin akses database Supabase.';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -43,7 +46,7 @@ class DramaDatabaseProvider extends ChangeNotifier {
     await loadDramas();
   }
 
-  // CREATE: MENAMBAHKAN DRAMA BARU
+  // CREATE: MENAMBAHKAN DRAMA
   Future<DramaDatabaseModel> createDrama({
     required String title,
     required int? year,
@@ -51,18 +54,24 @@ class DramaDatabaseProvider extends ChangeNotifier {
     String? description,
     String? posterUrl,
   }) async {
-    final newDrama = await _service.createDrama(
-      title: title,
-      year: year,
-      genre: genre,
-      description: description,
-      posterUrl: posterUrl,
-    );
+    try {
+      final newDrama = await _service.createDrama(
+        title: title,
+        year: year,
+        genre: genre,
+        description: description,
+        posterUrl: posterUrl,
+      );
 
-    _dramas = [..._dramas, newDrama];
-    notifyListeners();
+      _dramas = [..._dramas, newDrama];
+      notifyListeners();
 
-    return newDrama;
+      return newDrama;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal menambahkan drama: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   // UPDATE: MEMPERBARUI DATA DRAMA
@@ -74,32 +83,46 @@ class DramaDatabaseProvider extends ChangeNotifier {
     String? description,
     String? posterUrl,
   }) async {
-    final updatedDrama = await _service.updateDrama(
-      id: id,
-      title: title,
-      year: year,
-      genre: genre,
-      description: description,
-      posterUrl: posterUrl,
-    );
+    try {
+      final updatedDrama = await _service.updateDrama(
+        id: id,
+        title: title,
+        year: year,
+        genre: genre,
+        description: description,
+        posterUrl: posterUrl,
+      );
 
-    _dramas = _dramas.map((drama) {
-      return drama.id == updatedDrama.id ? updatedDrama : drama;
-    }).toList();
+      _dramas = _dramas.map((drama) {
+        return drama.id == updatedDrama.id
+            ? updatedDrama
+            : drama;
+      }).toList();
 
-    notifyListeners();
+      notifyListeners();
 
-    return updatedDrama;
+      return updatedDrama;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal memperbarui drama: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   // DELETE: MENGHAPUS DRAMA
   Future<void> deleteDrama(int id) async {
-    await _service.deleteDrama(id: id);
+    try {
+      await _service.deleteDrama(id: id);
 
-    _dramas = _dramas
-        .where((drama) => drama.id != id)
-        .toList();
+      _dramas = _dramas
+          .where((drama) => drama.id != id)
+          .toList();
 
-    notifyListeners();
+      notifyListeners();
+    } catch (error, stackTrace) {
+      debugPrint('Gagal menghapus drama dengan ID $id: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
   }
 }
