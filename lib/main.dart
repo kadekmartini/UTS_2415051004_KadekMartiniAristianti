@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -129,6 +128,7 @@ DramaItem databaseDramaToItem(dynamic drama) {
     genre: drama.genre as String,
     description: (drama.description as String?) ?? '',
     color: primaryColor,
+    posterUrl: drama.posterUrl as String?,
   );
 }
 
@@ -264,7 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return matchesGenre && matchesSearch;
     }).toList();
 
-    // DRAMA PILIHAN DIAMBIL DARI DATABASE
     final featuredDrama = databaseProvider.dramas.isEmpty
         ? null
         : databaseProvider.dramas.first;
@@ -347,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 24),
 
-          // BANNER DRAMA PILIHAN DENGAN POSTER DATABASE
+          // BANNER DRAMA PILIHAN
           Container(
             height: 215,
             clipBehavior: Clip.antiAlias,
@@ -375,7 +374,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
 
-                // Lapisan gelap agar teks terbaca
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -512,7 +510,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 26),
 
-          // JUDUL DAN JUMLAH DRAMA
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -577,7 +574,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
-            // GRID POSTER RESPONSIF
             LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
@@ -665,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// KARTU DRAMA LOKAL
+// KARTU DRAMA LOKAL DAN WATCHLIST
 class DramaCard extends StatelessWidget {
   final DramaItem drama;
   final VoidCallback onTap;
@@ -678,6 +674,8 @@ class DramaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final posterUrl = drama.posterUrl?.trim();
+
     return Card(
       margin: EdgeInsets.zero,
       color: Colors.white,
@@ -705,14 +703,38 @@ class DramaCard extends StatelessWidget {
                   ),
                 ),
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Center(
-                      child: Icon(
-                        Icons.movie_outlined,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        size: 54,
+                    // POSTER DRAMA DI WATCHLIST
+                    if (posterUrl != null &&
+                        posterUrl.isNotEmpty)
+                      Image.network(
+                        posterUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.movie_outlined,
+                              color: Colors.white.withValues(
+                                alpha: 0.9,
+                              ),
+                              size: 54,
+                            ),
+                          );
+                        },
+                      )
+                    else
+                      Center(
+                        child: Icon(
+                          Icons.movie_outlined,
+                          color: Colors.white.withValues(
+                            alpha: 0.9,
+                          ),
+                          size: 54,
+                        ),
                       ),
-                    ),
+
+                    // LABEL TAHUN
                     Positioned(
                       left: 9,
                       top: 9,
@@ -739,6 +761,8 @@ class DramaCard extends StatelessWidget {
                 ),
               ),
             ),
+
+            // INFORMASI DRAMA
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
               child: Column(
@@ -783,7 +807,7 @@ class DramaCard extends StatelessWidget {
   }
 }
 
-// HALAMAN DETAIL DRAMA LOKAL
+// HALAMAN DETAIL DRAMA
 class DramaDetailScreen extends StatelessWidget {
   final DramaItem drama;
 
@@ -798,6 +822,8 @@ class DramaDetailScreen extends StatelessWidget {
       (provider) => provider.isInWatchlist(drama),
     );
 
+    final posterUrl = drama.posterUrl?.trim();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Drama'),
@@ -805,19 +831,44 @@ class DramaDetailScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Container(
-            height: 230,
-            decoration: BoxDecoration(
-              color: drama.color,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.movie_outlined,
-              size: 90,
-              color: Colors.white,
+          // POSTER DRAMA DI HALAMAN DETAIL
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: SizedBox(
+              width: double.infinity,
+              height: 300,
+              child: posterUrl != null && posterUrl.isNotEmpty
+                  ? Image.network(
+                      posterUrl,
+                      width: double.infinity,
+                      height: 300,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: drama.color,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.movie_outlined,
+                            size: 90,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: drama.color,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.movie_outlined,
+                        size: 90,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
+
           const SizedBox(height: 20),
+
           Text(
             drama.title,
             style: const TextStyle(
@@ -826,7 +877,9 @@ class DramaDetailScreen extends StatelessWidget {
               color: textColor,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
             '${drama.year} • Thailand • ${drama.genre}',
             style: const TextStyle(
@@ -834,7 +887,9 @@ class DramaDetailScreen extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+
           const SizedBox(height: 18),
+
           const Text(
             'Informasi Drama',
             style: TextStyle(
@@ -842,12 +897,16 @@ class DramaDetailScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
             drama.description,
             style: const TextStyle(fontSize: 15),
           ),
+
           const SizedBox(height: 24),
+
           FilledButton.icon(
             onPressed: () {
               context.read<DramaProvider>().toggleWatchlist(drama);
@@ -1594,7 +1653,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 6),
           const Center(
             child: Text(
-              'Mahasiswa Pendidikan Teknik Informatika',
+              'Pendidikan Teknik Informatika',
               textAlign: TextAlign.center,
             ),
           ),
