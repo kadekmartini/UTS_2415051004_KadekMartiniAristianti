@@ -170,9 +170,9 @@ class _DramaDatabaseScreenState
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
         itemCount: provider.dramas.length,
         itemBuilder: (context, index) {
-          final drama = provider.dramas[index];
-
-          return DramaDatabaseCard(drama: drama);
+          return DramaDatabaseCard(
+            drama: provider.dramas[index],
+          );
         },
       ),
     );
@@ -188,7 +188,7 @@ class DramaDatabaseCard extends StatelessWidget {
     required this.drama,
   });
 
-  // MEMBUKA FORM EDIT DRAMA
+  // MEMBUKA FORM EDIT
   Future<void> _openEditForm(BuildContext context) async {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -202,6 +202,74 @@ class DramaDatabaseCard extends StatelessWidget {
 
     if (result == true) {
       await context.read<DramaDatabaseProvider>().loadDramas();
+    }
+  }
+
+  // DIALOG KONFIRMASI DELETE
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          icon: const Icon(
+            Icons.delete_outline,
+            color: Colors.redAccent,
+            size: 36,
+          ),
+          title: const Text('Hapus Drama?'),
+          content: Text(
+            'Apakah kamu yakin ingin menghapus '
+            '"${drama.title}" dari database? '
+            'Data yang dihapus tidak dapat dikembalikan.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('Ya, Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await context
+          .read<DramaDatabaseProvider>()
+          .deleteDrama(drama.id);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${drama.title} berhasil dihapus.'),
+          backgroundColor: const Color(0xFF388E3C),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Drama gagal dihapus. Periksa koneksi dan izin DELETE Supabase.',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -250,20 +318,35 @@ class DramaDatabaseCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _openEditForm(context),
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        size: 18,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _openEditForm(context),
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Edit'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF59436B),
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
-                      label: const Text('Edit Drama'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF59436B),
-                        visualDensity: VisualDensity.compact,
+                      OutlinedButton.icon(
+                        onPressed: () => _confirmDelete(context),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                        ),
+                        label: const Text('Hapus'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -274,7 +357,7 @@ class DramaDatabaseCard extends StatelessWidget {
     );
   }
 
-  // MEMUAT POSTER
+  // MEMUAT POSTER DRAMA
   Widget _buildPoster(String? url) {
     if (url == null || url.trim().isEmpty) {
       return _posterPlaceholder();
@@ -295,7 +378,7 @@ class DramaDatabaseCard extends StatelessWidget {
     );
   }
 
-  // POSTER PENGGANTI JIKA GAMBAR TIDAK TERSEDIA
+  // POSTER PENGGANTI
   Widget _posterPlaceholder() {
     return Container(
       width: 76,

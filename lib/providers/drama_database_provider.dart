@@ -20,7 +20,7 @@ class DramaDatabaseProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // MENGAMBIL DATA DRAMA
+  // READ: MENGAMBIL DATA DRAMA
   Future<void> loadDramas() async {
     _isLoading = true;
     _errorMessage = null;
@@ -43,7 +43,7 @@ class DramaDatabaseProvider extends ChangeNotifier {
     await loadDramas();
   }
 
-  // MENAMBAHKAN DRAMA BARU
+  // CREATE: MENAMBAHKAN DRAMA BARU
   Future<DramaDatabaseModel> createDrama({
     required String title,
     required int? year,
@@ -65,7 +65,7 @@ class DramaDatabaseProvider extends ChangeNotifier {
     return newDrama;
   }
 
-  // MEMPERBARUI DATA DRAMA
+  // UPDATE: MEMPERBARUI DATA DRAMA
   Future<DramaDatabaseModel> updateDrama({
     required int id,
     required String title,
@@ -90,5 +90,16 @@ class DramaDatabaseProvider extends ChangeNotifier {
     notifyListeners();
 
     return updatedDrama;
+  }
+
+  // DELETE: MENGHAPUS DRAMA
+  Future<void> deleteDrama(int id) async {
+    await _service.deleteDrama(id: id);
+
+    _dramas = _dramas
+        .where((drama) => drama.id != id)
+        .toList();
+
+    notifyListeners();
   }
 }

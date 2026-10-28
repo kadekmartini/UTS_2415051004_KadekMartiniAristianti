@@ -9,7 +9,7 @@ class DramaSupabaseService {
   DramaSupabaseService({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
 
-  // MENGAMBIL DATA DRAMA
+  // READ: MENGAMBIL DATA DRAMA
   Future<List<DramaDatabaseModel>> getDramas() async {
     final rows = await _client
         .from('dramas')
@@ -21,7 +21,7 @@ class DramaSupabaseService {
         .toList();
   }
 
-  // MENAMBAHKAN DRAMA BARU
+  // CREATE: MENAMBAHKAN DRAMA
   Future<DramaDatabaseModel> createDrama({
     required String title,
     required int? year,
@@ -44,7 +44,7 @@ class DramaSupabaseService {
     return DramaDatabaseModel.fromJson(row);
   }
 
-  // MEMPERBARUI DATA DRAMA
+  // UPDATE: MEMPERBARUI DATA DRAMA
   Future<DramaDatabaseModel> updateDrama({
     required int id,
     required String title,
@@ -67,5 +67,17 @@ class DramaSupabaseService {
         .single();
 
     return DramaDatabaseModel.fromJson(row);
+  }
+
+  // DELETE: MENGHAPUS DRAMA BERDASARKAN ID
+  Future<void> deleteDrama({
+    required int id,
+  }) async {
+    await _client
+        .from('dramas')
+        .delete()
+        .eq('id', id)
+        .select('id')
+        .single();
   }
 }
