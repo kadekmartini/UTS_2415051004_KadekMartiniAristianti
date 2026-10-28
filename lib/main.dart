@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +9,7 @@ import 'providers/drama_provider.dart';
 import 'providers/drama_api_provider.dart';
 import 'providers/drama_database_provider.dart';
 import 'screens/drama_database_screen.dart';
+import 'widgets/drama_catalog_card.dart';
 
 // KONFIGURASI SUPABASE
 const String supabaseUrl =
@@ -47,7 +49,7 @@ const Color accentColor = Color(0xFFE99B84);
 const Color backgroundColor = Color(0xFFFAF7F4);
 const Color textColor = Color(0xFF302A35);
 
-// DATA CONTOH DRAMA LOKAL
+// DATA CONTOH LOKAL
 const List<DramaItem> demoDramas = [
   DramaItem(
     title: 'Bad Buddy',
@@ -117,6 +119,17 @@ class MyApp extends StatelessWidget {
       home: const MainNavigationScreen(),
     );
   }
+}
+
+// KONVERSI DATA DATABASE KE MODEL DETAIL LOKAL
+DramaItem databaseDramaToItem(dynamic drama) {
+  return DramaItem(
+    title: drama.title as String,
+    year: drama.year?.toString() ?? '-',
+    genre: drama.genre as String,
+    description: (drama.description as String?) ?? '',
+    color: primaryColor,
+  );
 }
 
 // NAVIGASI UTAMA
@@ -235,9 +248,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredDramas = demoDramas.where((drama) {
+    final databaseProvider =
+        context.watch<DramaDatabaseProvider>();
+
+    final filteredDramas =
+        databaseProvider.dramas.where((drama) {
       final matchesGenre = selectedGenre == 'Semua' ||
-          drama.genre == selectedGenre;
+          drama.genre.toLowerCase() ==
+              selectedGenre.toLowerCase();
 
       final matchesSearch = drama.title
           .toLowerCase()
@@ -245,6 +263,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
       return matchesGenre && matchesSearch;
     }).toList();
+
+    // DRAMA PILIHAN DIAMBIL DARI DATABASE
+    final featuredDrama = databaseProvider.dramas.isEmpty
+        ? null
+        : databaseProvider.dramas.first;
+
+    final featuredPosterUrl =
+        featuredDrama?.posterUrl?.trim();
 
     return Scaffold(
       appBar: AppBar(
@@ -296,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
 
-          // PENCARIAN DRAMA LOKAL
+          // PENCARIAN DRAMA
           TextField(
             controller: searchController,
             onChanged: (value) {
@@ -321,9 +347,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 24),
 
-          // BANNER DRAMA PILIHAN
+          // BANNER DRAMA PILIHAN DENGAN POSTER DATABASE
           Container(
             height: 215,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
               gradient: const LinearGradient(
@@ -336,21 +363,36 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                Positioned(
-                  right: 22,
-                  top: 42,
-                  child: Icon(
-                    Icons.movie_outlined,
-                    color: Colors.white.withValues(alpha: 0.15),
-                    size: 100,
+                if (featuredPosterUrl != null &&
+                    featuredPosterUrl.isNotEmpty)
+                  Image.network(
+                    featuredPosterUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
+                // Lapisan gelap agar teks terbaca
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x55302635),
+                        Color(0xEE302035),
+                      ],
+                    ),
                   ),
                 ),
+
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -371,18 +413,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const Spacer(),
-                      const Text(
-                        'BAD BUDDY',
-                        style: TextStyle(
+                      Text(
+                        featuredDrama?.title.toUpperCase() ??
+                            'BELUM ADA DRAMA',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 5),
-                      const Text(
-                        'Thailand • Romance • BL',
-                        style: TextStyle(
+                      Text(
+                        featuredDrama == null
+                            ? 'Tambahkan drama melalui menu Database'
+                            : 'Thailand • '
+                                '${featuredDrama.year ?? '-'} • '
+                                '${featuredDrama.genre}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white70,
                         ),
@@ -391,9 +442,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(
                         height: 36,
                         child: ElevatedButton(
-                          onPressed: () {
-                            openDrama(demoDramas[0]);
-                          },
+                          onPressed: featuredDrama == null
+                              ? null
+                              : () {
+                                  openDrama(
+                                    databaseDramaToItem(
+                                      featuredDrama,
+                                    ),
+                                  );
+                                },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: primaryColor,
@@ -455,6 +512,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 26),
 
+          // JUDUL DAN JUMLAH DRAMA
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -471,8 +529,47 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // GRID DRAMA RESPONSIF
-          if (filteredDramas.isEmpty)
+          // LOADING, ERROR, DAN EMPTY STATE
+          if (databaseProvider.isLoading &&
+              databaseProvider.dramas.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: primaryColor,
+                ),
+              ),
+            )
+          else if (databaseProvider.errorMessage != null &&
+              databaseProvider.dramas.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.cloud_off_outlined,
+                    size: 48,
+                    color: Colors.redAccent,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    databaseProvider.errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      context
+                          .read<DramaDatabaseProvider>()
+                          .loadDramas();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            )
+          else if (filteredDramas.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
               child: Center(
@@ -480,6 +577,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
+            // GRID POSTER RESPONSIF
             LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
@@ -500,16 +598,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   gridDelegate:
                       SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: columnCount,
-                    mainAxisExtent: 235,
+                    mainAxisExtent: 285,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
                   itemBuilder: (context, index) {
                     final drama = filteredDramas[index];
 
-                    return DramaCard(
+                    return DramaCatalogCard(
                       drama: drama,
-                      onTap: () => openDrama(drama),
+                      onTap: () {
+                        openDrama(
+                          databaseDramaToItem(drama),
+                        );
+                      },
                     );
                   },
                 );
@@ -534,8 +636,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Punya drama favorit?',
@@ -778,7 +879,7 @@ class DramaDetailScreen extends StatelessWidget {
   }
 }
 
-// HALAMAN KATALOG LOKAL
+// HALAMAN KATALOG DARI SUPABASE
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
 
@@ -789,9 +890,22 @@ class CatalogScreen extends StatefulWidget {
 class _CatalogScreenState extends State<CatalogScreen> {
   String searchText = '';
 
+  final TextEditingController searchController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredDramas = demoDramas.where((drama) {
+    final databaseProvider =
+        context.watch<DramaDatabaseProvider>();
+
+    final filteredDramas =
+        databaseProvider.dramas.where((drama) {
       return drama.title
           .toLowerCase()
           .contains(searchText.toLowerCase());
@@ -812,6 +926,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
+              controller: searchController,
               onChanged: (value) {
                 setState(() {
                   searchText = value;
@@ -832,56 +947,154 @@ class _CatalogScreenState extends State<CatalogScreen> {
               ),
             ),
           ),
+
           Expanded(
-            child: filteredDramas.isEmpty
-                ? const Center(
-                    child: Text('Drama tidak ditemukan.'),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      final int columns;
+            child: Builder(
+              builder: (context) {
+                if (databaseProvider.isLoading &&
+                    databaseProvider.dramas.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: primaryColor,
+                    ),
+                  );
+                }
 
-                      if (width >= 900) {
-                        columns = 4;
-                      } else if (width >= 600) {
-                        columns = 3;
-                      } else {
-                        columns = 2;
-                      }
-
-                      return GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredDramas.length,
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          mainAxisExtent: 235,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                        itemBuilder: (context, index) {
-                          final drama = filteredDramas[index];
-
-                          return DramaCard(
-                            drama: drama,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return DramaDetailScreen(
-                                      drama: drama,
-                                    );
-                                  },
-                                ),
-                              );
+                if (databaseProvider.errorMessage != null &&
+                    databaseProvider.dramas.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.cloud_off_outlined,
+                            size: 50,
+                            color: Colors.redAccent,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            databaseProvider.errorMessage!,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              context
+                                  .read<DramaDatabaseProvider>()
+                                  .loadDramas();
                             },
-                          );
-                        },
-                      );
-                    },
-                  ),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (filteredDramas.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.movie_filter_outlined,
+                            size: 55,
+                            color: primaryColor,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            searchText.isEmpty
+                                ? 'Belum ada drama di katalog.'
+                                : 'Drama tidak ditemukan.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (searchText.isEmpty) ...[
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Tambahkan drama melalui menu Database.',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          if (!databaseProvider.isLoading)
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                context
+                                    .read<DramaDatabaseProvider>()
+                                    .loadDramas();
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Muat Ulang'),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    final int columns;
+
+                    if (width >= 900) {
+                      columns = 4;
+                    } else if (width >= 600) {
+                      columns = 3;
+                    } else {
+                      columns = 2;
+                    }
+
+                    return GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        4,
+                        16,
+                        20,
+                      ),
+                      itemCount: filteredDramas.length,
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisExtent: 285,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemBuilder: (context, index) {
+                        final drama = filteredDramas[index];
+
+                        return DramaCatalogCard(
+                          drama: drama,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return DramaDetailScreen(
+                                    drama: databaseDramaToItem(
+                                      drama,
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
