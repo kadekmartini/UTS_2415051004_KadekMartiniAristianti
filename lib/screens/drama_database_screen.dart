@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -77,6 +76,7 @@ class _DramaDatabaseScreenState
     );
   }
 
+  // TAMPILAN BERDASARKAN KONDISI DATA
   Widget _buildBody(DramaDatabaseProvider provider) {
     if (provider.isLoading) {
       return const Center(
@@ -202,6 +202,15 @@ class DramaDatabaseCard extends StatelessWidget {
 
     if (result == true) {
       await context.read<DramaDatabaseProvider>().loadDramas();
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data drama berhasil diperbarui!'),
+          backgroundColor: Color(0xFF388E3C),
+        ),
+      );
     }
   }
 
@@ -265,7 +274,8 @@ class DramaDatabaseCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Drama gagal dihapus. Periksa koneksi dan izin DELETE Supabase.',
+            'Drama gagal dihapus. Periksa koneksi '
+            'dan izin DELETE Supabase.',
           ),
           backgroundColor: Colors.redAccent,
         ),
@@ -318,6 +328,8 @@ class DramaDatabaseCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 10),
+
+                  // TOMBOL EDIT DAN HAPUS
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
@@ -378,7 +390,7 @@ class DramaDatabaseCard extends StatelessWidget {
     );
   }
 
-  // POSTER PENGGANTI
+  // POSTER PENGGANTI JIKA GAMBAR KOSONG
   Widget _posterPlaceholder() {
     return Container(
       width: 76,
