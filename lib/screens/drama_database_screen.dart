@@ -1,8 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/drama_database_model.dart';
 import '../providers/drama_database_provider.dart';
+import 'drama_form_screen.dart';
 
 class DramaDatabaseScreen extends StatefulWidget {
   const DramaDatabaseScreen({super.key});
@@ -23,6 +25,20 @@ class _DramaDatabaseScreenState
         context.read<DramaDatabaseProvider>().loadDramas();
       }
     });
+  }
+
+  Future<void> _openCreateForm() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (context) => const DramaFormScreen(),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      await context.read<DramaDatabaseProvider>().loadDramas();
+    }
   }
 
   @override
@@ -49,6 +65,13 @@ class _DramaDatabaseScreenState
         ],
       ),
       body: _buildBody(provider),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreateForm,
+        backgroundColor: const Color(0xFF59436B),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah Drama'),
+      ),
     );
   }
 
@@ -127,7 +150,8 @@ class _DramaDatabaseScreenState
               ),
               SizedBox(height: 8),
               Text(
-                'Tambahkan data melalui database Supabase.',
+                'Tekan tombol Tambah Drama untuk '
+                'menambahkan koleksi baru.',
                 textAlign: TextAlign.center,
               ),
             ],
@@ -153,6 +177,7 @@ class _DramaDatabaseScreenState
   }
 }
 
+// KARTU DRAMA DARI DATABASE
 class DramaDatabaseCard extends StatelessWidget {
   final DramaDatabaseModel drama;
 
@@ -214,42 +239,44 @@ class DramaDatabaseCard extends StatelessWidget {
     );
   }
 
+  // POSTER DRAMA
   Widget _buildPoster(String? url) {
-    if (url == null || url.isEmpty) {
-      return Container(
-        width: 76,
-        height: 106,
-        decoration: BoxDecoration(
-          color: const Color(0xFFECE3F0),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(
-          Icons.movie_outlined,
-          size: 36,
-          color: Color(0xFF59436B),
-        ),
-      );
+    if (url == null || url.trim().isEmpty) {
+      return _posterPlaceholder();
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: Image.network(
-        url,
+        url.trim(),
         width: 76,
         height: 106,
         fit: BoxFit.cover,
+
+        // Membantu memuat gambar eksternal di Flutter Web.
+        webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+
+        // Tampilkan placeholder jika gambar gagal dimuat.
         errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 76,
-            height: 106,
-            color: const Color(0xFFECE3F0),
-            child: const Icon(
-              Icons.movie_outlined,
-              size: 36,
-              color: Color(0xFF59436B),
-            ),
-          );
+          return _posterPlaceholder();
         },
+      ),
+    );
+  }
+
+  // TAMPILAN PENGGANTI JIKA POSTER KOSONG ATAU GAGAL
+  Widget _posterPlaceholder() {
+    return Container(
+      width: 76,
+      height: 106,
+      decoration: BoxDecoration(
+        color: const Color(0xFFECE3F0),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        Icons.movie_outlined,
+        size: 36,
+        color: Color(0xFF59436B),
       ),
     );
   }
